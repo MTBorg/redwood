@@ -1,12 +1,32 @@
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{ArgEnum, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(name = "redwood")]
 pub struct Cli {
+    /// The path of the log file to log to.
+    /// Defaults to $HOME/.redwood.log
+    #[clap(long)]
+    pub log_file_path: Option<PathBuf>,
+
+    /// The level to use when logging to file.
+    /// Defaults to off.
+    #[clap(long, arg_enum)]
+    pub log_file_level: Option<LogFileLevel>,
+
     #[clap(subcommand)]
     pub command: Commands,
+}
+
+#[derive(Clone, Debug, ArgEnum)]
+pub enum LogFileLevel {
+    Off,
+    Error,
+    Warn,
+    Info,
+    Debug,
+    Trace,
 }
 
 #[derive(Debug, Subcommand)]
