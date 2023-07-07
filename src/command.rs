@@ -4,6 +4,7 @@ use crate::error::RedwoodError;
 use crate::Result;
 use crate::{cli, cli::Cli};
 
+use log::*;
 use std::path::{Path, PathBuf};
 
 pub trait Command {
@@ -64,6 +65,8 @@ impl Command for New {
         if let Some(tmux_session_name) = &self.tmux_session_name {
             wt_cfg.set_tmux_session_name(&tmux_session_name);
         }
+
+        debug!("writing worktree config to config file: {:#?}", &wt_cfg);
         cfg.add_worktree(wt_cfg)?;
         config_writer.write(&cfg)?;
 
@@ -186,6 +189,8 @@ impl Command for Import {
         if let Some(tmux_session_name) = &self.tmux_session_name {
             wt_cfg.set_tmux_session_name(&tmux_session_name);
         }
+
+        debug!("writing worktree config to config file: {:#?}", &wt_cfg);
         cfg.add_worktree(wt_cfg)?;
         config_writer.write(&cfg)?;
 

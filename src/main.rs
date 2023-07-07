@@ -34,16 +34,16 @@ fn main() {
     let config_path = match conf::get_config_path() {
         Ok(config_path) => config_path,
         Err(e) => {
-            print!("{}", e);
+            error!("{}", e);
             exit(1);
         }
     };
-    debug!("read config from path {:?}", config_path);
+    debug!("reading config from path {:?}", config_path);
     let cfg = match conf::read_config(&config_path) {
         Ok(cfg) => cfg,
         Err(RedwoodError::ConfigNotFound) => conf::Config::new(),
         Err(e) => {
-            print!("{}", e);
+            error!("{}", e);
             exit(1);
         }
     };
@@ -55,8 +55,8 @@ fn main() {
     let ctx = Context::new(tmux, git, config_writer);
 
     let cmd: Box<dyn Command> = cli.into();
-    // if let Err(e) = cmd.execute(&ctx, cfg) {
-    //     print!("{}", e);
-    //     exit(1);
-    // }
+    if let Err(e) = cmd.execute(&ctx, cfg) {
+        error!("{}", e);
+        exit(1);
+    }
 }
