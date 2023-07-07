@@ -5,6 +5,11 @@ use clap::{ArgEnum, Parser, Subcommand};
 #[derive(Debug, Parser)]
 #[clap(name = "redwood")]
 pub struct Cli {
+    /// The level to use when logging to stdout.
+    /// Defaults to info.
+    #[clap(long, arg_enum)]
+    pub log_stdout_level: Option<LogFileLevel>,
+
     /// The path of the log file to log to.
     /// Defaults to $HOME/.redwood.log
     #[clap(long)]

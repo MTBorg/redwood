@@ -6,6 +6,7 @@ use log4rs::append::console::ConsoleAppender;
 use log4rs::append::file::FileAppender;
 use log4rs::config::{Appender, Config, Root};
 use log4rs::encode::pattern::PatternEncoder;
+use log4rs::filter::threshold::ThresholdFilter;
 
 use crate::cli;
 
@@ -34,7 +35,11 @@ impl LogOptions {
                 .map(|l| LevelFilter::from(l))
                 .unwrap_or(self.log_file_level),
 
-            stdout_log_level: DEFAULT_STDOUT_LOG_LEVEL, // TODO: Parse from cli
+            stdout_log_level: cli
+                .log_stdout_level
+                .as_ref()
+                .map(|l| LevelFilter::from(l))
+                .unwrap_or(self.stdout_log_level),
         }
     }
 }
@@ -72,24 +77,30 @@ fn default_log_path() -> std::path::PathBuf {
 }
 
 pub fn init(options: LogOptions) {
-    let stdout = ConsoleAppender::builder().build();
     let mut root = Root::builder();
     let mut config = Config::builder();
 
+    let stdout = ConsoleAppender::builder().build();
     root = root.appender("stdout");
-    config = config.appender(Appender::builder().build("stdout", Box::new(stdout)));
+    config = config.appender(
+        Appender::builder()
+            .filter(Box::new(ThresholdFilter::new(options.stdout_log_level)))
+            .build("stdout", Box::new(stdout)),
+    );
 
-    if options.log_file_level != LevelFilter::Off {
-        let files = FileAppender::builder()
-            .encoder(Box::new(PatternEncoder::new("{d} - {m}{n}")))
-            .build(options.log_file_path)
-            .unwrap();
+    let files = FileAppender::builder()
+        .encoder(Box::new(PatternEncoder::new("{d} [{l}] - {m}{n}")))
+        .build(options.log_file_path)
+        .unwrap();
+    root = root.appender("files");
+    config = config.appender(
+        Appender::builder()
+            .filter(Box::new(ThresholdFilter::new(options.log_file_level)))
+            .build("files", Box::new(files)),
+    );
 
-        config = config.appender(Appender::builder().build("files", Box::new(files)));
-        root = root.appender("files");
-    }
-
-    let root = root.build(options.stdout_log_level); // TODO: Separate loggers for file and stdout
+    const ALL_LEVELS: LevelFilter = LevelFilter::Trace; // let appenders specify level themselves
+    let root = root.build(ALL_LEVELS);
     let config = config.build(root).unwrap();
 
     log4rs::init_config(config).unwrap();
