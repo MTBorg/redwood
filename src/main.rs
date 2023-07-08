@@ -55,8 +55,10 @@ fn main() {
     let ctx = Context::new(tmux, git, config_writer);
 
     let cmd: Box<dyn Command> = cli.into();
+    debug!("executing command {:?}", cmd);
     if let Err(e) = cmd.execute(&ctx, cfg) {
         error!("{}", e);
         exit(1);
     }
+    debug!("{:?} command executed", cmd);
 }

@@ -5,9 +5,10 @@ use crate::Result;
 use crate::{cli, cli::Cli};
 
 use log::*;
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 
-pub trait Command {
+pub trait Command: Debug {
     fn execute(&self, ctx: &Context, cfg: Config) -> Result<()>;
 }
 
@@ -39,6 +40,7 @@ impl std::convert::From<Cli> for Box<dyn Command> {
     }
 }
 
+#[derive(Debug)]
 struct New {
     repo_path: Option<PathBuf>,
     worktree_name: String,
@@ -75,6 +77,10 @@ impl Command for New {
             .as_deref()
             .unwrap_or(&self.worktree_name);
 
+        debug!(
+            "creating tmux session {:#?} at {:?}",
+            session_name, &worktree_path
+        );
         tmux.new_session(session_name, &worktree_path)?;
         tmux.attach_to_session(session_name)?;
 
@@ -82,6 +88,7 @@ impl Command for New {
     }
 }
 
+#[derive(Debug)]
 struct Open {
     identifier: String,
 }
@@ -98,9 +105,19 @@ impl Command for Open {
             }
         };
 
+        debug!(
+            "found worktree config for {:#?}: {:#?}",
+            self.identifier, worktree_cfg
+        );
+
         let session_name = worktree_cfg
             .tmux_session_name()
             .unwrap_or(worktree_cfg.worktree_name());
+        debug!(
+            "creating tmux session {:#?} at {:?}",
+            session_name,
+            worktree_cfg.repo_path()
+        );
         tmux.new_session(session_name, Path::new(worktree_cfg.repo_path()))?;
         tmux.attach_to_session(session_name)?;
 
@@ -108,6 +125,7 @@ impl Command for Open {
     }
 }
 
+#[derive(Debug)]
 struct Delete {
     identifier: String,
 }
@@ -127,17 +145,31 @@ impl Command for Delete {
                 })
             }
         };
+        debug!(
+            "found worktree config for {:#?}: {:#?}",
+            self.identifier, worktree_cfg
+        );
 
         let repo = git.get_repo_meta(Path::new(worktree_cfg.repo_path()))?;
         if repo.is_bare() {
+            debug!(
+                "deleting worktree {:#?} from git repo {:?}",
+                worktree_cfg.worktree_name(),
+                repo.root_path()
+            );
             git.delete_worktree(&repo.root_path(), &worktree_cfg.worktree_name())?;
         }
 
         let session_name = worktree_cfg
             .tmux_session_name()
             .unwrap_or(worktree_cfg.worktree_name());
+        debug!("killing tmux session {:#?}", session_name);
         tmux.kill_session(session_name)?;
 
+        debug!(
+            "removing worktree config {:#?} from config file ",
+            self.identifier
+        );
         cfg.remove_worktree(&self.identifier)?;
         config_writer.write(&cfg)?;
 
@@ -145,6 +177,7 @@ impl Command for Delete {
     }
 }
 
+#[derive(Debug)]
 struct List {}
 
 impl Command for List {
@@ -156,6 +189,7 @@ impl Command for List {
     }
 }
 
+#[derive(Debug)]
 struct Version {}
 
 impl Command for Version {
@@ -165,6 +199,7 @@ impl Command for Version {
     }
 }
 
+#[derive(Debug)]
 struct Import {
     worktree_path: PathBuf,
     tmux_session_name: Option<String>,
