@@ -37,6 +37,7 @@ func main() {
 	root.PersistentFlags().StringVar(&logFile, "log-file", "/var/log/redwood.log", `log file path (use "stderr" to write to stderr)`)
 
 	root.AddCommand(cmd.NewListCmd())
+	root.AddCommand(cmd.NewOpenCmd())
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
