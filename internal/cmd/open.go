@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/MTBorg/redwood/internal/config"
 	"github.com/MTBorg/redwood/internal/git"
 	"github.com/MTBorg/redwood/internal/tmux"
 	"github.com/spf13/cobra"
@@ -51,7 +52,12 @@ func NewOpenCmd(baseDir *string) *cobra.Command {
 			sessionName := filepath.Base(path)
 			slog.Debug("opening repo in tmux", "path", path, "session", sessionName)
 
-			if err := tmux.NewSession(sessionName, path); err != nil {
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := tmux.NewSession(sessionName, path, cfg.Windows); err != nil {
 				return fmt.Errorf("failed to create tmux session %q: %w", sessionName, err)
 			}
 

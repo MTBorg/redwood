@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/MTBorg/redwood/internal/config"
 	"github.com/MTBorg/redwood/internal/git"
 	"github.com/MTBorg/redwood/internal/tmux"
 	"github.com/spf13/cobra"
@@ -47,7 +48,13 @@ func NewNewCmd(baseDir *string) *cobra.Command {
 
 			worktreePath := filepath.Join(repoPath, worktreeName)
 			sessionName := fmt.Sprintf("%s - %s", filepath.Base(repoPath), worktreeName)
-			if err := tmux.NewSession(sessionName, worktreePath); err != nil {
+
+			cfg, err := config.Load()
+			if err != nil {
+				return fmt.Errorf("failed to load config: %w", err)
+			}
+
+			if err := tmux.NewSession(sessionName, worktreePath, cfg.Windows); err != nil {
 				return fmt.Errorf("failed to create tmux session %q: %w", sessionName, err)
 			}
 			if err := tmux.AttachSession(sessionName); err != nil {

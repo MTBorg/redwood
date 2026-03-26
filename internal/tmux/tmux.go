@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/MTBorg/redwood/internal/config"
 )
 
 func configPath() string {
@@ -25,8 +27,17 @@ func InSession() bool {
 
 // NewSession creates a new detached tmux session with the given name, using dir
 // as the start directory. The user's tmux config is loaded if it exists.
-func NewSession(name, dir string) error {
+// If windows is non-empty, named windows are created with optional startup commands.
+func NewSession(name, dir string, windows []config.Window) error {
+	firstWindowName := ""
+	if len(windows) > 0 {
+		firstWindowName = windows[0].Name
+	}
+
 	args := []string{"new-session", "-d", "-s", name, "-c", dir}
+	if firstWindowName != "" {
+		args = append(args, "-n", firstWindowName)
+	}
 	if cfg := configPath(); cfg != "" {
 		if _, err := os.Stat(cfg); err == nil {
 			args = append([]string{"-f", cfg}, args...)
@@ -34,7 +45,35 @@ func NewSession(name, dir string) error {
 	}
 	cmd := exec.Command("tmux", args...)
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+
+	// Send command to first window if set
+	if len(windows) > 0 && windows[0].Command != "" {
+		if err := sendKeys(name+":"+windows[0].Name, windows[0].Command); err != nil {
+			return err
+		}
+	}
+
+	// Create remaining windows
+	for _, w := range windows[1:] {
+		newWinArgs := []string{"new-window", "-t", name, "-n", w.Name, "-c", dir}
+		if err := exec.Command("tmux", newWinArgs...).Run(); err != nil {
+			return err
+		}
+		if w.Command != "" {
+			if err := sendKeys(name+":"+w.Name, w.Command); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func sendKeys(target, command string) error {
+	return exec.Command("tmux", "send-keys", "-t", target, command, "Enter").Run()
 }
 
 // KillSession kills the tmux session with the given name.
