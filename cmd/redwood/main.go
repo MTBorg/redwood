@@ -30,7 +30,7 @@ func main() {
 	var baseDir string
 
 	root := &cobra.Command{
-		Use:   "redwood2",
+		Use:   "redwood",
 		Short: "Integrate git repositories with tmux sessions",
 		PersistentPreRunE: func(c *cobra.Command, args []string) error {
 			return setupLogging(logFile)
