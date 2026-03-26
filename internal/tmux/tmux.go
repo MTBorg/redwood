@@ -37,6 +37,13 @@ func NewSession(name, dir string) error {
 	return cmd.Run()
 }
 
+// KillSession kills the tmux session with the given name.
+func KillSession(name string) error {
+	cmd := exec.Command("tmux", "kill-session", "-t", name)
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
+}
+
 // AttachSession attaches to an existing tmux session. If already inside tmux,
 // it switches the client to the target session instead of nesting.
 func AttachSession(name string) error {

@@ -14,3 +14,12 @@ func CreateWorktree(repoPath, worktreeName string) error {
 	}
 	return nil
 }
+
+// RemoveWorktree removes the worktree at worktreePath.
+func RemoveWorktree(worktreePath string) error {
+	cmd := exec.Command("git", "-C", worktreePath, "worktree", "remove", worktreePath)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("git worktree remove failed: %w\n%s", err, out)
+	}
+	return nil
+}

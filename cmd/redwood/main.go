@@ -44,6 +44,7 @@ func main() {
 	root.AddCommand(cmd.NewListCmd(&baseDir))
 	root.AddCommand(cmd.NewOpenCmd(&baseDir))
 	root.AddCommand(cmd.NewNewCmd(&baseDir))
+	root.AddCommand(cmd.NewDeleteCmd(&baseDir))
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
