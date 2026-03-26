@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewOpenCmd() *cobra.Command {
+func NewOpenCmd(baseDir *string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "open <path>",
 		Short: "Open a git repository in a new tmux session",
@@ -22,8 +22,12 @@ func NewOpenCmd() *cobra.Command {
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
+			base := *baseDir
+			if base == "" {
+				base = home
+			}
 			ignoredDirs := strings.Split(os.Getenv("REDWOOD_IGNORED_DIRS"), ",")
-			repos, err := git.FindRepos(home, ignoredDirs)
+			repos, err := git.FindRepos(base, ignoredDirs)
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
