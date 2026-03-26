@@ -38,7 +38,8 @@ func NewListCmd() *cobra.Command {
 				if onlyWorktrees && repo.Type != git.Worktree {
 					continue
 				}
-				fmt.Println(repo.Path)
+				path := strings.Replace(repo.Path, home, "$HOME", 1)
+				fmt.Println(path)
 			}
 
 			return nil
