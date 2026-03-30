@@ -25,6 +25,11 @@ func InSession() bool {
 	return os.Getenv("TMUX") != ""
 }
 
+// SessionExists reports whether a tmux session with the given name already exists.
+func SessionExists(name string) bool {
+	return exec.Command("tmux", "has-session", "-t", name).Run() == nil
+}
+
 // NewSession creates a new detached tmux session with the given name, using dir
 // as the start directory. The user's tmux config is loaded if it exists.
 // If windows is non-empty, named windows are created with optional startup commands.

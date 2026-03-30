@@ -52,13 +52,17 @@ func NewOpenCmd(baseDir *string) *cobra.Command {
 			sessionName := filepath.Base(path)
 			slog.Debug("opening repo in tmux", "path", path, "session", sessionName)
 
-			cfg, err := config.Load()
-			if err != nil {
-				return fmt.Errorf("failed to load config: %w", err)
-			}
+			if !tmux.SessionExists(sessionName) {
+				cfg, err := config.Load()
+				if err != nil {
+					return fmt.Errorf("failed to load config: %w", err)
+				}
 
-			if err := tmux.NewSession(sessionName, path, cfg.Windows); err != nil {
-				return fmt.Errorf("failed to create tmux session %q: %w", sessionName, err)
+				if err := tmux.NewSession(sessionName, path, cfg.Windows); err != nil {
+					return fmt.Errorf("failed to create tmux session %q: %w", sessionName, err)
+				}
+			} else {
+				slog.Debug("tmux session already exists, attaching", "session", sessionName)
 			}
 
 			if err := tmux.AttachSession(sessionName); err != nil {
