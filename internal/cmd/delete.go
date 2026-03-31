@@ -49,9 +49,10 @@ func NewDeleteCmd(baseDir *string) *cobra.Command {
 				}
 
 				sessionName := fmt.Sprintf("%s - %s", filepath.Base(filepath.Dir(worktreePath)), filepath.Base(worktreePath))
-				if err := tmux.KillSession(sessionName); err != nil {
-					// Non-fatal: session may not exist
-					fmt.Fprintf(os.Stderr, "warning: could not kill tmux session %q: %v\n", sessionName, err)
+				if tmux.SessionExists(sessionName) {
+					if err := tmux.KillSession(sessionName); err != nil {
+						fmt.Fprintf(os.Stderr, "warning: could not kill tmux session %q: %v\n", sessionName, err)
+					}
 				}
 			}
 			return nil
