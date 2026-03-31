@@ -10,6 +10,7 @@ import (
 type Window struct {
 	Name    string `yaml:"name"`
 	Command string `yaml:"command"`
+	Focus   bool   `yaml:"focus"`
 }
 
 type Config struct {

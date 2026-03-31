@@ -74,6 +74,15 @@ func NewSession(name, dir string, windows []config.Window) error {
 		}
 	}
 
+	for _, w := range windows {
+		if w.Focus {
+			if err := exec.Command("tmux", "select-window", "-t", name+":"+w.Name).Run(); err != nil {
+				return err
+			}
+			break
+		}
+	}
+
 	return nil
 }
 
