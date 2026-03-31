@@ -5,17 +5,19 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-// CreateWorktree creates a new worktree named worktreeName inside the
-// repository at repoPath.
-func CreateWorktree(repoPath, worktreeName string) error {
-	cmd := exec.Command("git", "-C", repoPath, "worktree", "add", worktreeName)
+// CreateWorktree creates a new worktree named worktreeName as a sibling of the
+// repository at repoPath (i.e. ../repoName-worktreeName) and returns its path.
+func CreateWorktree(repoPath, worktreeName string) (string, error) {
+	worktreePath := filepath.Join(filepath.Dir(repoPath), filepath.Base(repoPath)+"-"+worktreeName)
+	cmd := exec.Command("git", "-C", repoPath, "worktree", "add", worktreePath)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("git worktree add failed: %w\n%s", err, out)
+		return "", fmt.Errorf("git worktree add failed: %w\n%s", err, out)
 	}
-	return nil
+	return worktreePath, nil
 }
 
 // ListWorktrees returns the paths of all worktrees associated with the

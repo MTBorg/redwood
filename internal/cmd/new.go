@@ -42,11 +42,10 @@ func NewNewCmd(baseDir *string) *cobra.Command {
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repoPath, worktreeName := args[0], args[1]
-			if err := git.CreateWorktree(repoPath, worktreeName); err != nil {
+			worktreePath, err := git.CreateWorktree(repoPath, worktreeName)
+			if err != nil {
 				return fmt.Errorf("failed to create worktree %q in %q: %w", worktreeName, repoPath, err)
 			}
-
-			worktreePath := filepath.Join(repoPath, worktreeName)
 			sessionName := fmt.Sprintf("%s - %s", filepath.Base(repoPath), worktreeName)
 
 			cfg, err := config.Load()
