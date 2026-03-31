@@ -32,9 +32,26 @@ func NewOpenCmd(baseDir *string) *cobra.Command {
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
-			paths := make([]string, len(repos))
-			for i, repo := range repos {
-				paths[i] = strings.Replace(repo.Path, home, "$HOME", 1)
+
+			seen := make(map[string]bool)
+			var paths []string
+			addPath := func(p string) {
+				if !seen[p] {
+					seen[p] = true
+					paths = append(paths, strings.Replace(p, home, "$HOME", 1))
+				}
+			}
+
+			for _, repo := range repos {
+				addPath(repo.Path)
+				worktrees, err := git.ListWorktrees(repo.Path)
+				if err != nil {
+					slog.Debug("failed to list worktrees", "repo", repo.Path, "err", err)
+					continue
+				}
+				for _, wt := range worktrees {
+					addPath(wt)
+				}
 			}
 			return paths, cobra.ShellCompDirectiveNoFileComp
 		},
