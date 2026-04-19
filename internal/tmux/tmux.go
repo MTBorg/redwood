@@ -20,6 +20,12 @@ func configPath() string {
 	return filepath.Join(cfg, "tmux", ".tmux.conf")
 }
 
+// exact returns a tmux target string that matches the session name exactly,
+// preventing prefix-matching against sessions with longer names.
+func exact(name string) string {
+	return "=" + name
+}
+
 // InSession reports whether the current process is running inside a tmux session.
 func InSession() bool {
 	return os.Getenv("TMUX") != ""
@@ -27,7 +33,7 @@ func InSession() bool {
 
 // SessionExists reports whether a tmux session with the given name already exists.
 func SessionExists(name string) bool {
-	return exec.Command("tmux", "has-session", "-t", name).Run() == nil
+	return exec.Command("tmux", "has-session", "-t", exact(name)).Run() == nil
 }
 
 // NewSession creates a new detached tmux session with the given name, using dir
@@ -56,19 +62,19 @@ func NewSession(name, dir string, windows []config.Window) error {
 
 	// Send command to first window if set
 	if len(windows) > 0 && windows[0].Command != "" {
-		if err := sendKeys(name+":"+windows[0].Name, windows[0].Command); err != nil {
+		if err := sendKeys(exact(name)+":"+windows[0].Name, windows[0].Command); err != nil {
 			return err
 		}
 	}
 
 	// Create remaining windows
 	for _, w := range windows[1:] {
-		newWinArgs := []string{"new-window", "-t", name, "-n", w.Name, "-c", dir}
+		newWinArgs := []string{"new-window", "-t", exact(name), "-n", w.Name, "-c", dir}
 		if err := exec.Command("tmux", newWinArgs...).Run(); err != nil {
 			return err
 		}
 		if w.Command != "" {
-			if err := sendKeys(name+":"+w.Name, w.Command); err != nil {
+			if err := sendKeys(exact(name)+":"+w.Name, w.Command); err != nil {
 				return err
 			}
 		}
@@ -76,7 +82,7 @@ func NewSession(name, dir string, windows []config.Window) error {
 
 	for _, w := range windows {
 		if w.Focus {
-			if err := exec.Command("tmux", "select-window", "-t", name+":"+w.Name).Run(); err != nil {
+			if err := exec.Command("tmux", "select-window", "-t", exact(name)+":"+w.Name).Run(); err != nil {
 				return err
 			}
 			break
@@ -92,7 +98,7 @@ func sendKeys(target, command string) error {
 
 // KillSession kills the tmux session with the given name.
 func KillSession(name string) error {
-	cmd := exec.Command("tmux", "kill-session", "-t", name)
+	cmd := exec.Command("tmux", "kill-session", "-t", exact(name))
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
@@ -102,9 +108,9 @@ func KillSession(name string) error {
 func AttachSession(name string) error {
 	var cmd *exec.Cmd
 	if InSession() {
-		cmd = exec.Command("tmux", "switch-client", "-t", name)
+		cmd = exec.Command("tmux", "switch-client", "-t", exact(name))
 	} else {
-		cmd = exec.Command("tmux", "attach-session", "-t", name)
+		cmd = exec.Command("tmux", "attach-session", "-t", exact(name))
 	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
