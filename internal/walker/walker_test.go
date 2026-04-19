@@ -1,3 +1,5 @@
+// TODO: This code is unused as it is not fully implemented. Remove before
+// merging to main.
 package walker
 
 import (

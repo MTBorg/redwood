@@ -106,6 +106,7 @@ func FindRepos(root string, ignoredDirs []string) ([]Repo, error) {
 		repoType, isRepo := detectRepoType(path)
 		if isRepo {
 			repos = append(repos, Repo{Path: path, Type: repoType})
+			return filepath.SkipDir
 		}
 
 		return nil
