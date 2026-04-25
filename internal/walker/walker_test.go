@@ -12,16 +12,30 @@ import (
 )
 
 func BenchmarkWalker(b *testing.B) {
-	root, err := generateTestDirHierarchy(b, 20, 10000)
-	assert.NoError(b, err)
-	rootFS := os.DirFS(root)
+	tests := []struct {
+		levels int
+		width  int
+	}{
+		{10, 1000},
+		{20, 10000},
+		// {30, 20000},
+	}
 
-	for b.Loop() {
-		fs.WalkDir(rootFS, ".", func(path string, d fs.DirEntry, err error) error {
-			return nil
+	for _, tt := range tests {
+		b.Run(fmt.Sprintf("levels=%d_width=%d", tt.levels, tt.width), func(b *testing.B) {
+			root, err := generateTestDirHierarchy(b, tt.levels, tt.width)
+			assert.NoError(b, err)
+			rootFS := os.DirFS(root)
+
+			for b.Loop() {
+				fs.WalkDir(rootFS, ".", func(path string, d fs.DirEntry, err error) error {
+					return nil
+				})
+			}
+			b.ReportMetric(b.Elapsed().Seconds()/float64(b.N), "seconds/op")
 		})
 	}
-	b.ReportMetric(b.Elapsed().Seconds()/float64(b.N), "seconds/op")
+
 }
 
 // func TestWalker(t *testing.T) {
