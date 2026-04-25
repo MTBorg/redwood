@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewListCmd(baseDir *string) *cobra.Command {
+func NewListCmd(includedDirs *[]string) *cobra.Command {
 	var onlyBareRepos bool
 	var onlyWorktrees bool
 
@@ -18,21 +18,25 @@ func NewListCmd(baseDir *string) *cobra.Command {
 		Use:   "list",
 		Short: "List all git repositories in your home directory",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			base := *baseDir
-			if base == "" {
+			bases := *includedDirs
+			if len(bases) == 0 {
 				home, err := os.UserHomeDir()
 				if err != nil {
 					return fmt.Errorf("could not determine home directory: %w", err)
 				}
-				base = home
+				bases = []string{home}
 			}
 
 			ignoredDirs := strings.Split(os.Getenv("REDWOOD_IGNORED_DIRS"), ",")
-			slog.Debug("searching for git repos", "base", base, "ignored", ignoredDirs)
+			slog.Debug("searching for git repos", "bases", bases, "ignored", ignoredDirs)
 
-			repos, err := git.FindRepos(base, ignoredDirs)
-			if err != nil {
-				return fmt.Errorf("error searching for repositories: %w", err)
+			var repos []git.Repo
+			for _, base := range bases {
+				r, err := git.FindRepos(expandTilde(base), ignoredDirs)
+				if err != nil {
+					return fmt.Errorf("error searching for repositories: %w", err)
+				}
+				repos = append(repos, r...)
 			}
 
 			home, _ := os.UserHomeDir()

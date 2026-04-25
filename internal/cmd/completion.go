@@ -3,9 +3,22 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
+
+// expandTilde replaces a leading "~" with the user's home directory.
+func expandTilde(path string) string {
+	if !strings.HasPrefix(path, "~") {
+		return path
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+	return home + path[1:]
+}
 
 var CompletionCmd = &cobra.Command{
 	Use:   "completion [bash|zsh|fish|powershell]",

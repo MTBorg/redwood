@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewNewCmd(baseDir *string) *cobra.Command {
+func NewNewCmd(includedDirs *[]string) *cobra.Command {
 	return &cobra.Command{
 		Use:   "new <repo> <worktree>",
 		Short: "Create a new worktree in a git repository",
@@ -25,14 +25,18 @@ func NewNewCmd(baseDir *string) *cobra.Command {
 			if err != nil {
 				return nil, cobra.ShellCompDirectiveError
 			}
-			base := *baseDir
-			if base == "" {
-				base = home
+			bases := *includedDirs
+			if len(bases) == 0 {
+				bases = []string{home}
 			}
 			ignoredDirs := strings.Split(os.Getenv("REDWOOD_IGNORED_DIRS"), ",")
-			repos, err := git.FindRepos(base, ignoredDirs)
-			if err != nil {
-				return nil, cobra.ShellCompDirectiveError
+			var repos []git.Repo
+			for _, base := range bases {
+				r, err := git.FindRepos(expandTilde(base), ignoredDirs)
+				if err != nil {
+					return nil, cobra.ShellCompDirectiveError
+				}
+				repos = append(repos, r...)
 			}
 			paths := make([]string, 0, len(repos))
 			for _, repo := range repos {

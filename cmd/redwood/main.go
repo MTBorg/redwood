@@ -27,7 +27,7 @@ func setupLogging(logFile string) error {
 
 func main() {
 	var logFile string
-	var baseDir string
+	var includedDirs []string
 
 	root := &cobra.Command{
 		Use:   "redwood",
@@ -38,13 +38,13 @@ func main() {
 	}
 
 	root.PersistentFlags().StringVar(&logFile, "log-file", "/var/log/redwood.log", `log file path (use "stderr" to write to stderr)`)
-	root.PersistentFlags().StringVar(&baseDir, "base", "", "base directory to search (defaults to home directory)")
+	root.PersistentFlags().StringArrayVar(&includedDirs, "include", nil, "directories to search (may be repeated; defaults to home directory)")
 
 	root.AddCommand(cmd.CompletionCmd)
-	root.AddCommand(cmd.NewListCmd(&baseDir))
-	root.AddCommand(cmd.NewOpenCmd(&baseDir))
-	root.AddCommand(cmd.NewNewCmd(&baseDir))
-	root.AddCommand(cmd.NewDeleteCmd(&baseDir))
+	root.AddCommand(cmd.NewListCmd(&includedDirs))
+	root.AddCommand(cmd.NewOpenCmd(&includedDirs))
+	root.AddCommand(cmd.NewNewCmd(&includedDirs))
+	root.AddCommand(cmd.NewDeleteCmd(&includedDirs))
 
 	if err := root.Execute(); err != nil {
 		os.Exit(1)
