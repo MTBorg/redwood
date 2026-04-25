@@ -13,17 +13,16 @@ import (
 
 func BenchmarkWalker(b *testing.B) {
 	tests := []struct {
-		levels int
-		width  int
+		depth     int
+		branching int
 	}{
-		{10, 1000},
-		{20, 10000},
-		// {30, 20000},
+		{4, 10}, // ~11K dirs
+		{5, 10}, // ~111K dirs
 	}
 
 	for _, tt := range tests {
-		b.Run(fmt.Sprintf("levels=%d_width=%d", tt.levels, tt.width), func(b *testing.B) {
-			root, err := generateTestDirHierarchy(b, tt.levels, tt.width)
+		b.Run(fmt.Sprintf("depth=%d_branching=%d", tt.depth, tt.branching), func(b *testing.B) {
+			root, err := generateTestDirHierarchy(b, tt.depth, tt.branching)
 			assert.NoError(b, err)
 			rootFS := os.DirFS(root)
 
@@ -52,24 +51,23 @@ func BenchmarkWalker(b *testing.B) {
 // 	time.Sleep(1000 * time.Second)
 // }
 
-func generateTestDirHierarchy(t testing.TB, levels int, width int) (string, error) {
+func generateTestDirHierarchy(t testing.TB, depth int, branching int) (string, error) {
 	rootDir := t.TempDir()
-	for range width {
-		p := generatePath(levels)
-		p = path.Join(rootDir, p)
-		err := os.MkdirAll(p, 0750)
-		if err != nil {
-			return "", fmt.Errorf("os.MkdirAll: %w", err)
+	var build func(dir string, d int) error
+	build = func(dir string, d int) error {
+		if d == 0 {
+			return nil
 		}
+		for range branching {
+			child := path.Join(dir, uuid.NewString()[:8])
+			if err := os.Mkdir(child, 0750); err != nil {
+				return err
+			}
+			if err := build(child, d-1); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
-	return rootDir, nil
-}
-
-func generatePath(levels int) string {
-	components := []string{}
-	for range levels {
-		component := uuid.NewString()[:8]
-		components = append(components, component)
-	}
-	return path.Join(components...)
+	return rootDir, build(rootDir, depth)
 }
