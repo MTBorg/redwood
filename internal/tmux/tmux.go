@@ -68,6 +68,8 @@ func NewSession(name, dir string, windows []config.Window) error {
 	}
 
 	// Create remaining windows
+	// TODO: There is a "slice out of bounds range"-crash here when there are no
+	// windows specified in the cfg
 	for _, w := range windows[1:] {
 		newWinArgs := []string{"new-window", "-t", exact(name), "-n", w.Name, "-c", dir}
 		if err := exec.Command("tmux", newWinArgs...).Run(); err != nil {
